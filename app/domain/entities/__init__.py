@@ -1,7 +1,8 @@
 """Domain entities package."""
 from app.domain.entities.base import Entity
+from app.domain.entities.exercise import Exercise
+from app.domain.entities.organization import Organization, SubscriptionStatus, SubscriptionTier
 from app.domain.entities.user import User, UserRole
-from app.domain.entities.organization import Organization, SubscriptionTier, SubscriptionStatus
 
 __all__ = [
     "Entity",
@@ -10,4 +11,5 @@ __all__ = [
     "Organization",
     "SubscriptionTier",
     "SubscriptionStatus",
+    "Exercise",
 ]
