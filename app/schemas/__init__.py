@@ -12,6 +12,15 @@ from app.schemas.auth import (
     UserRegister,
     UserResponse,
 )
+from app.schemas.exercise import (
+    ExerciseCreate,
+    ExerciseFilter,
+    ExerciseListResponse,
+    ExerciseResponse,
+    ExerciseSummaryResponse,
+    ExerciseUpdate,
+    MuscleContributionResponse,
+)
 
 __all__ = [
     # Auth schemas
@@ -23,4 +32,12 @@ __all__ = [
     "TokenResponse",
     "UserResponse",
     "MessageResponse",
+    # Exercise schemas
+    "ExerciseCreate",
+    "ExerciseUpdate",
+    "ExerciseFilter",
+    "ExerciseResponse",
+    "ExerciseListResponse",
+    "ExerciseSummaryResponse",
+    "MuscleContributionResponse",
 ]
