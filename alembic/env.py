@@ -1,6 +1,8 @@
 """Alembic environment configuration."""
 import asyncio
+import sys
 from logging.config import fileConfig
+from pathlib import Path
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
@@ -8,8 +10,12 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
+# Add project root to Python path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 # Import your models here
-from app.infrastructure.database.session import Base
+from app.infrastructure.database.base import Base
 from app.models import UserModel  # Import all models
 from app.core.config import settings
 
@@ -24,7 +30,8 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 # Set the database URL from settings
-config.set_main_option("sqlalchemy.url", settings.database_url_sync)
+config.set_main_option("sqlalchemy.url", str(settings.DATABASE_URL))
+
 
 
 def run_migrations_offline() -> None:

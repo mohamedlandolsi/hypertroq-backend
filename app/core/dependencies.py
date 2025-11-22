@@ -1,12 +1,11 @@
 """Dependency injection for FastAPI routes."""
-from typing import AsyncGenerator, Annotated
+from typing import AsyncGenerator, Annotated, Any
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.security import decode_token, verify_token_type
-from app.infrastructure.database.session import async_session_maker
 
 
 # OAuth2 scheme for token authentication
@@ -16,12 +15,15 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Get database session dependency."""
-    async with async_session_maker() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+    """
+    Get database session dependency.
+    
+    Import is inside the function to avoid circular imports.
+    """
+    from app.infrastructure.database import get_db as database_get_db
+    
+    async for session in database_get_db():
+        yield session
 
 
 async def get_current_user_id(token: Annotated[str, Depends(oauth2_scheme)]) -> str:

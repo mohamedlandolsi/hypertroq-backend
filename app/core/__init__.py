@@ -14,7 +14,6 @@ from app.core.security import (
     InvalidTokenError,
     TokenExpiredError,
 )
-from app.core.dependencies import get_db, get_current_user_id, get_current_active_user
 
 __all__ = [
     "settings",
@@ -30,7 +29,5 @@ __all__ = [
     "constant_time_compare",
     "InvalidTokenError",
     "TokenExpiredError",
-    "get_db",
-    "get_current_user_id",
-    "get_current_active_user",
 ]
+
