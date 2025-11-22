@@ -35,10 +35,11 @@ Program → Sessions (Workouts) → Exercises → Sets
 
 ## Critical Database Configuration
 
-### Supabase + pgBouncer Compatibility
-- **Use `DIRECT_URL`** for Alembic migrations (bypasses pgBouncer on port 5432)
-- **Use `DATABASE_URL`** for application runtime (pooled connection via port 6543)
+### Google Cloud SQL + pgBouncer Compatibility
+- **Use `DIRECT_URL`** for Alembic migrations (bypasses pgBouncer)
+- **Use `DATABASE_URL`** for application runtime (pooled connection)
 - **pgBouncer detection**: Automatically sets `statement_cache_size=0` when "pooler" or "pgbouncer" in URL
+- **Cloud SQL Unix Socket**: For production, use Unix socket connection: `postgresql+asyncpg://USER:PASSWORD@/DATABASE?host=/cloudsql/PROJECT:REGION:INSTANCE`
 - See `app/infrastructure/database/connection.py` DatabaseManager class
 
 ### Database Session Pattern
@@ -235,10 +236,11 @@ if not user:
 - **Security**: Verify webhook signatures with `LEMONSQUEEZY_WEBHOOK_SECRET`
 - **Config**: Requires `LEMONSQUEEZY_API_KEY`, `STORE_ID`, `WEBHOOK_SECRET`
 
-### Cloud Storage (Google Cloud Storage)
+### Google Cloud Storage (app/core/storage.py)
 - **Buckets**: `hypertoq-exercises` (public), `hypertoq-user-uploads` (private), `hypertoq-exports` (24hr retention)
 - **Usage**: Exercise images/videos, profile pictures, CSV/PDF exports
-- **Access**: Signed URLs for private files
+- **Access**: Signed URLs for private files, public URLs for public content
+- **Config**: Requires `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_STORAGE_BUCKET`
 
 ### Email Service (Future: SendGrid/Resend)
 - **Use cases**: Welcome emails, verification, password reset, progress reports
@@ -351,6 +353,7 @@ CMD exec gunicorn --bind :$PORT --workers 4 \
 - **Backups**: Daily automated, 7-day retention
 - **Extensions**: `pgvector`, `uuid-ossp`
 - **Connection**: Cloud SQL Proxy or Unix socket, SSL/TLS required
+- **Format**: `postgresql+asyncpg://USER:PASSWORD@/DATABASE?host=/cloudsql/PROJECT:REGION:INSTANCE`
 - **Migrations**: Run `alembic upgrade head` via Cloud Build
 
 ### Redis (Memorystore)

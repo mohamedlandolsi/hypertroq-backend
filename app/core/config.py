@@ -27,18 +27,16 @@ class Settings(BaseSettings):
     PORT: int = 8000
     RELOAD: bool = False
 
-    # Database
+    # Database (Google Cloud SQL)
     DATABASE_URL: PostgresDsn
     DIRECT_URL: PostgresDsn | None = None
     DB_ECHO: bool = False
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 0
 
-    # Supabase (Optional - for additional Supabase features)
-    SUPABASE_URL: str | None = None
-    SUPABASE_KEY: str | None = None
-    SUPABASE_SERVICE_ROLE_KEY: str | None = None
-    SUPABASE_JWT_SECRET: str | None = None
+    # Google Cloud
+    GOOGLE_CLOUD_PROJECT: str
+    GOOGLE_CLOUD_STORAGE_BUCKET: str
 
     # Redis
     REDIS_URL: RedisDsn
@@ -89,7 +87,7 @@ class Settings(BaseSettings):
             return v
         raise ValueError(v)
 
-    # Google Generative AI
+    # Google Cloud & AI Services
     GOOGLE_API_KEY: str
     GEMINI_MODEL: str = "gemini-pro"
 
@@ -102,6 +100,17 @@ class Settings(BaseSettings):
             raise ValueError("GOOGLE_API_KEY must be set in production")
         if v and v == "your-google-api-key-here":
             raise ValueError("GOOGLE_API_KEY must not be the default value")
+        return v
+
+    @field_validator("GOOGLE_CLOUD_PROJECT")
+    @classmethod
+    def validate_google_cloud_project(cls, v: str, info: ValidationInfo) -> str:
+        """Validate Google Cloud project ID is set in production."""
+        environment = info.data.get("ENVIRONMENT", "production")
+        if environment == "production" and not v:
+            raise ValueError("GOOGLE_CLOUD_PROJECT must be set in production")
+        if v and v in ["your-project-id", "test-project"]:
+            raise ValueError("GOOGLE_CLOUD_PROJECT must not be a placeholder value")
         return v
 
     # LemonSqueezy

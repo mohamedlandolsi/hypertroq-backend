@@ -62,6 +62,34 @@ class RedisClient:
         
         return await self.redis.exists(key) > 0
 
+    async def incr(self, key: str) -> int:
+        """Increment value of key by 1."""
+        if not self.redis:
+            return 0
+        
+        return await self.redis.incr(key)
+
+    async def setex(self, key: str, seconds: int, value: Any) -> bool:
+        """Set key with expiration in seconds."""
+        if not self.redis:
+            return False
+        
+        return await self.redis.setex(key, seconds, value)
+
+    async def ttl(self, key: str) -> int:
+        """Get time to live for key in seconds."""
+        if not self.redis:
+            return -1
+        
+        return await self.redis.ttl(key)
+
+    async def expire(self, key: str, seconds: int) -> bool:
+        """Set expiration for key in seconds."""
+        if not self.redis:
+            return False
+        
+        return await self.redis.expire(key, seconds)
+
 
 # Global Redis client instance
 redis_client = RedisClient()
