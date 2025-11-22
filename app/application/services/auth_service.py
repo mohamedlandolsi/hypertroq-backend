@@ -15,7 +15,7 @@ class AuthService:
         self.user_service = user_service
 
     async def login(self, login_data: LoginDTO) -> TokenDTO:
-        """Authenticate user and return tokens."""
+        """Authenticate user and return tokens with organization context."""
         user = await self.user_service.authenticate_user(
             login_data.email,
             login_data.password
@@ -34,9 +34,14 @@ class AuthService:
                 detail="Inactive user"
             )
 
-        # Create tokens
-        access_token = create_access_token(str(user.id))
-        refresh_token = create_refresh_token(str(user.id))
+        # Create tokens with organization context
+        token_data = {
+            "user_id": str(user.id),
+            "organization_id": str(user.organization_id),
+            "role": user.role.value,
+        }
+        access_token = create_access_token(token_data)
+        refresh_token = create_refresh_token(token_data)
 
         return TokenDTO(
             access_token=access_token,
@@ -48,16 +53,24 @@ class AuthService:
         payload = decode_token(refresh_token)
         verify_token_type(payload, "refresh")
         
-        user_id = payload.get("sub")
-        if not user_id:
+        user_id = payload.get("user_id")
+        organization_id = payload.get("organization_id")
+        role = payload.get("role")
+        
+        if not user_id or not organization_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token",
             )
 
-        # Create new tokens
-        access_token = create_access_token(user_id)
-        new_refresh_token = create_refresh_token(user_id)
+        # Create new tokens with same context
+        token_data = {
+            "user_id": user_id,
+            "organization_id": organization_id,
+            "role": role,
+        }
+        access_token = create_access_token(token_data)
+        new_refresh_token = create_refresh_token(token_data)
 
         return TokenDTO(
             access_token=access_token,

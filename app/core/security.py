@@ -89,7 +89,7 @@ def get_password_hash(password: str) -> str:
 
 # JWT Token functions
 def create_access_token(
-    subject: str | Any,
+    subject: str | Dict[str, Any],
     expires_delta: Optional[timedelta] = None,
     additional_claims: Optional[Dict[str, Any]] = None
 ) -> str:
@@ -97,7 +97,7 @@ def create_access_token(
     Create a JWT access token.
     
     Args:
-        subject: Token subject (usually user ID)
+        subject: Token subject (user ID string or dict with user_id, organization_id, role)
         expires_delta: Custom expiration time delta
         additional_claims: Additional claims to include in token
         
@@ -114,10 +114,17 @@ def create_access_token(
     to_encode = {
         "exp": expire,
         "iat": now,
-        "sub": str(subject),
         "type": "access",
         "jti": secrets.token_urlsafe(16)  # Unique token ID
     }
+    
+    # Handle both string and dict subjects
+    if isinstance(subject, dict):
+        to_encode.update(subject)
+        # Keep sub for backward compatibility
+        to_encode["sub"] = subject.get("user_id", "")
+    else:
+        to_encode["sub"] = str(subject)
     
     # Add any additional claims
     if additional_claims:
@@ -132,14 +139,14 @@ def create_access_token(
 
 
 def create_refresh_token(
-    subject: str | Any,
+    subject: str | Dict[str, Any],
     expires_delta: Optional[timedelta] = None
 ) -> str:
     """
     Create a JWT refresh token.
     
     Args:
-        subject: Token subject (usually user ID)
+        subject: Token subject (user ID string or dict with user_id, organization_id, role)
         expires_delta: Custom expiration time delta
         
     Returns:
@@ -155,10 +162,17 @@ def create_refresh_token(
     to_encode = {
         "exp": expire,
         "iat": now,
-        "sub": str(subject),
         "type": "refresh",
         "jti": secrets.token_urlsafe(16)
     }
+    
+    # Handle both string and dict subjects
+    if isinstance(subject, dict):
+        to_encode.update(subject)
+        # Keep sub for backward compatibility
+        to_encode["sub"] = subject.get("user_id", "")
+    else:
+        to_encode["sub"] = str(subject)
     
     encoded_jwt = jwt.encode(
         to_encode,

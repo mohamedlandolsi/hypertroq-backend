@@ -2,6 +2,7 @@
 from uuid import UUID
 from typing import List
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.user import User
@@ -23,8 +24,11 @@ class UserRepository(IUserRepository):
             email=model.email,
             hashed_password=model.hashed_password,
             full_name=model.full_name,
+            organization_id=model.organization_id,
+            role=model.role,
             is_active=model.is_active,
-            is_superuser=model.is_superuser,
+            is_verified=model.is_verified,
+            profile_image_url=model.profile_image_url,
         )
 
     def _to_model(self, entity: User) -> UserModel:
@@ -34,8 +38,11 @@ class UserRepository(IUserRepository):
             email=entity.email,
             hashed_password=entity.hashed_password,
             full_name=entity.full_name,
+            organization_id=entity.organization_id,
+            role=entity.role,
             is_active=entity.is_active,
-            is_superuser=entity.is_superuser,
+            is_verified=entity.is_verified,
+            profile_image_url=entity.profile_image_url,
         )
 
     async def get_by_id(self, id: UUID) -> User | None:
@@ -53,6 +60,17 @@ class UserRepository(IUserRepository):
         )
         model = result.scalar_one_or_none()
         return self._to_entity(model) if model else None
+
+    async def get_by_organization(self, organization_id: UUID, skip: int = 0, limit: int = 100) -> List[User]:
+        """Get all users in an organization with pagination."""
+        result = await self.session.execute(
+            select(UserModel)
+            .where(UserModel.organization_id == organization_id)
+            .offset(skip)
+            .limit(limit)
+        )
+        models = result.scalars().all()
+        return [self._to_entity(model) for model in models]
 
     async def exists_by_email(self, email: str) -> bool:
         """Check if user exists by email."""
@@ -88,8 +106,11 @@ class UserRepository(IUserRepository):
             model.email = entity.email
             model.hashed_password = entity.hashed_password
             model.full_name = entity.full_name
+            model.organization_id = entity.organization_id
+            model.role = entity.role
             model.is_active = entity.is_active
-            model.is_superuser = entity.is_superuser
+            model.is_verified = entity.is_verified
+            model.profile_image_url = entity.profile_image_url
             
             await self.session.commit()
             await self.session.refresh(model)
