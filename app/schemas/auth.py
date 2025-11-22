@@ -33,7 +33,7 @@ class UserRegister(BaseModel):
         min_length=8,
         max_length=128,
         description="Password (min 8 chars, must include uppercase, lowercase, digit, special char)",
-        examples=["SecureP@ssw0rd"],
+        examples=["<your_secure_password>"],
     )
     full_name: str = Field(
         ...,
@@ -55,7 +55,7 @@ class UserRegister(BaseModel):
         json_schema_extra={
             "example": {
                 "email": "john.doe@example.com",
-                "password": "SecureP@ssw0rd",
+                "password": "<your_secure_password>",
                 "full_name": "John Doe",
                 "organization_name": "Acme Fitness",
             }
@@ -118,7 +118,7 @@ class UserLogin(BaseModel):
         min_length=1,
         max_length=128,
         description="User's password",
-        examples=["SecureP@ssw0rd"],
+        examples=["<your_password>"],
     )
 
     model_config = ConfigDict(
@@ -126,7 +126,7 @@ class UserLogin(BaseModel):
         json_schema_extra={
             "example": {
                 "email": "john.doe@example.com",
-                "password": "SecureP@ssw0rd",
+                "password": "<your_password>",
             }
         },
     )
@@ -143,14 +143,14 @@ class TokenRefresh(BaseModel):
         ...,
         min_length=1,
         description="Valid JWT refresh token",
-        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
+        examples=["<your_refresh_token>"],
     )
 
     model_config = ConfigDict(
         str_strip_whitespace=True,
         json_schema_extra={
             "example": {
-                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "refresh_token": "<your_refresh_token>",
             }
         },
     )
@@ -190,22 +190,22 @@ class PasswordResetConfirm(BaseModel):
         ...,
         min_length=1,
         description="Password reset token from email",
-        examples=["abc123def456ghi789jkl012mno345pqr678"],
+        examples=["<reset_token_from_email>"],
     )
     new_password: str = Field(
         ...,
         min_length=8,
         max_length=128,
         description="New password (min 8 chars, must include uppercase, lowercase, digit, special char)",
-        examples=["NewSecureP@ssw0rd"],
+        examples=["<your_new_password>"],
     )
 
     model_config = ConfigDict(
         str_strip_whitespace=True,
         json_schema_extra={
             "example": {
-                "token": "abc123def456ghi789jkl012mno345pqr678",
-                "new_password": "NewSecureP@ssw0rd",
+                "token": "<reset_token_from_email>",
+                "new_password": "<your_new_password>",
             }
         },
     )
@@ -254,12 +254,12 @@ class TokenResponse(BaseModel):
     access_token: str = Field(
         ...,
         description="JWT access token for API authentication (short-lived)",
-        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
+        examples=["<jwt_access_token>"],
     )
     refresh_token: str = Field(
         ...,
         description="JWT refresh token for obtaining new access tokens (long-lived)",
-        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
+        examples=["<jwt_refresh_token>"],
     )
     token_type: Literal["bearer"] = Field(
         default="bearer",
@@ -269,8 +269,8 @@ class TokenResponse(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
-                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                "access_token": "<jwt_access_token>",
+                "refresh_token": "<jwt_refresh_token>",
                 "token_type": "bearer",
             }
         }
