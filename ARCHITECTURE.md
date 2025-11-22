@@ -1,4 +1,4 @@
-# HyperToQ Backend - Architecture Documentation
+# HypertroQ Backend - Architecture Documentation
 
 ## Overview
 

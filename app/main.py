@@ -58,7 +58,7 @@ app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 async def root() -> dict[str, str]:
     """Root endpoint."""
     return {
-        "message": "Welcome to HyperToQ Backend API",
+        "message": "Welcome to HypertroQ Backend API",
         "version": settings.APP_VERSION,
         "docs": "/docs",
     }

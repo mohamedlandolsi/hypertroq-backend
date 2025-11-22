@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     )
 
     # Application
-    APP_NAME: str = "HyperToQ Backend"
+    APP_NAME: str = "HypertroQ Backend"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
     ENVIRONMENT: str = "production"
@@ -29,9 +29,16 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: PostgresDsn
+    DIRECT_URL: PostgresDsn | None = None
     DB_ECHO: bool = False
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 0
+
+    # Supabase (Optional - for additional Supabase features)
+    SUPABASE_URL: str | None = None
+    SUPABASE_KEY: str | None = None
+    SUPABASE_SERVICE_ROLE_KEY: str | None = None
+    SUPABASE_JWT_SECRET: str | None = None
 
     # Redis
     REDIS_URL: RedisDsn

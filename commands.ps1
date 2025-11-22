@@ -1,4 +1,4 @@
-# HyperToQ Backend - PowerShell Commands
+# HypertroQ Backend - PowerShell Commands
 # Windows-friendly commands for development
 
 param(
@@ -7,7 +7,7 @@ param(
 )
 
 function Show-Help {
-    Write-Host "HyperToQ Backend - PowerShell Commands" -ForegroundColor Cyan
+    Write-Host "HypertroQ Backend - PowerShell Commands" -ForegroundColor Cyan
     Write-Host "======================================" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Usage: .\commands.ps1 <command>" -ForegroundColor Yellow

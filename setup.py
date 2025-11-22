@@ -22,7 +22,7 @@ def run_command(command: list[str], description: str) -> bool:
 
 def main():
     """Main setup function."""
-    print("\n🚀 HyperToQ Backend Setup")
+    print("\n🚀 HypertroQ Backend Setup")
     print("="*60)
     
     # Check if .env exists

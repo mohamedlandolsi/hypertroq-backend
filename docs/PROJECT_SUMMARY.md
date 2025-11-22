@@ -1,4 +1,4 @@
-# 🎉 HyperToQ Backend - Project Created Successfully!
+# 🎉 HypertroQ Backend - Project Created Successfully!
 
 ## 📊 Project Overview
 

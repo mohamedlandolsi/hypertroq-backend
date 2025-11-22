@@ -2,7 +2,7 @@
 
 # Default target
 help:
-	@echo "HyperToQ Backend - Makefile Commands"
+	@echo "HypertroQ Backend - Makefile Commands"
 	@echo "===================================="
 	@echo "install       - Install dependencies with Poetry"
 	@echo "dev           - Run development server"

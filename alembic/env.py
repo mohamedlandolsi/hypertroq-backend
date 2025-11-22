@@ -29,8 +29,9 @@ if config.config_file_name is not None:
 # Add your model's MetaData object here
 target_metadata = Base.metadata
 
-# Set the database URL from settings
-config.set_main_option("sqlalchemy.url", str(settings.DATABASE_URL))
+# Use DIRECT_URL if available (bypasses pgBouncer), otherwise use DATABASE_URL
+database_url = str(settings.DIRECT_URL) if settings.DIRECT_URL else str(settings.DATABASE_URL)
+config.set_main_option("sqlalchemy.url", database_url)
 
 
 
@@ -59,12 +60,21 @@ def do_run_migrations(connection: Connection) -> None:
 async def run_async_migrations() -> None:
     """Run migrations in async mode."""
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = str(settings.DATABASE_URL)
+    
+    # Use DIRECT_URL to bypass pgBouncer
+    database_url = str(settings.DIRECT_URL) if settings.DIRECT_URL else str(settings.DATABASE_URL)
+    configuration["sqlalchemy.url"] = database_url
+    
+    # Check if using pgBouncer and configure statement cache accordingly
+    connect_args = {}
+    if "pooler" in database_url.lower() or "pgbouncer" in database_url.lower():
+        connect_args["statement_cache_size"] = 0
     
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
 
     async with connectable.connect() as connection:

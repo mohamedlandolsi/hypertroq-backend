@@ -1,5 +1,5 @@
 """
-HyperToQ Backend - FastAPI Application with Clean Architecture
+HypertroQ Backend - FastAPI Application with Clean Architecture
 
 A production-ready FastAPI backend featuring:
 - Clean Architecture principles
@@ -12,5 +12,5 @@ A production-ready FastAPI backend featuring:
 """
 
 __version__ = "0.1.0"
-__author__ = "HyperToQ Team"
-__email__ = "team@hypertoq.com"
+__author__ = "HypertroQ Team"
+__email__ = "team@hypertroq.com"

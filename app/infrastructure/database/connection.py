@@ -34,21 +34,38 @@ class DatabaseManager:
             AsyncEngine instance
         """
         if self._engine is None:
+            # Use DIRECT_URL if available (bypasses pgBouncer), otherwise use DATABASE_URL
+            # DIRECT_URL connects directly to Postgres, avoiding pgBouncer statement cache issues
+            database_url = str(settings.DIRECT_URL) if settings.DIRECT_URL else str(settings.DATABASE_URL)
+            
             # Connection pool settings
             pool_class = QueuePool if not settings.DEBUG else NullPool
             
-            self._engine = create_async_engine(
-                str(settings.DATABASE_URL),
-                echo=settings.DB_ECHO,
-                pool_size=settings.DB_POOL_SIZE if not settings.DEBUG else 0,
-                max_overflow=settings.DB_MAX_OVERFLOW if not settings.DEBUG else 0,
-                pool_pre_ping=True,  # Verify connections before using
-                pool_recycle=3600,  # Recycle connections after 1 hour
-                poolclass=pool_class,
-                connect_args={
+            # Build engine kwargs
+            engine_kwargs = {
+                "echo": settings.DB_ECHO,
+                "pool_pre_ping": True,  # Verify connections before using
+                "poolclass": pool_class,
+                "connect_args": {
                     "server_settings": {"application_name": settings.APP_NAME},
                     "timeout": 30,  # Connection timeout in seconds
                 },
+            }
+            
+            # Only add pool settings if not using NullPool
+            if pool_class != NullPool:
+                engine_kwargs["pool_size"] = settings.DB_POOL_SIZE
+                engine_kwargs["max_overflow"] = settings.DB_MAX_OVERFLOW
+                engine_kwargs["pool_recycle"] = 3600  # Recycle connections after 1 hour
+            
+            # If using pgBouncer (pooled connection), disable statement caching
+            if "pooler" in database_url or "pgbouncer" in database_url.lower():
+                engine_kwargs["connect_args"]["statement_cache_size"] = 0
+                logger.info("Detected pgBouncer - disabling statement cache")
+            
+            self._engine = create_async_engine(
+                database_url,
+                **engine_kwargs
             )
             
             # Add event listeners

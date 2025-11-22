@@ -1,4 +1,4 @@
-# HyperToQ Backend
+# HypertroQ Backend
 
 A modern FastAPI backend application built with clean architecture principles, featuring async operations, background tasks, AI integration, and payment processing.
 
