@@ -63,6 +63,10 @@ def event_loop():
 @pytest.fixture(scope="session")
 async def setup_database():
     """Create test database tables."""
+    # Drop all tables first to ensure clean state
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+    
     # Create all tables
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

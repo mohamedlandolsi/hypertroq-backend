@@ -338,3 +338,45 @@ class UserService:
             last_active=user.updated_at,
             account_age_days=account_age,
         )
+
+    async def get_user_by_email(self, email: str) -> Optional[UserResponseDTO]:
+        """
+        Get user by email address.
+        
+        Args:
+            email: User email address
+            
+        Returns:
+            UserResponseDTO if found, None otherwise
+        """
+        user = await self.user_repository.get_by_email(email)
+        if not user:
+            return None
+        
+        return UserResponseDTO.model_validate(user)
+
+    async def verify_user_email(self, user_id: UUID) -> UserResponseDTO:
+        """
+        Verify user's email address.
+        
+        Args:
+            user_id: User UUID
+            
+        Returns:
+            Updated UserResponseDTO
+            
+        Raises:
+            HTTPException: If user not found
+        """
+        user = await self.user_repository.get_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        # Mark email as verified
+        user.is_verified = True
+        updated_user = await self.user_repository.update(user)
+        
+        return UserResponseDTO.model_validate(updated_user)

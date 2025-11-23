@@ -3,12 +3,19 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.application.dtos.auth_dto import TokenDTO, TokenRefreshDTO, LoginDTO
-from app.application.dtos.user_dto import UserCreateDTO, UserResponseDTO
+from app.application.dtos.auth_dto import (
+    TokenDTO,
+    TokenRefreshDTO,
+    LoginDTO,
+    PasswordResetRequestDTO,
+    PasswordResetConfirmDTO,
+    EmailVerificationDTO,
+)
+from app.application.dtos.user_dto import UserCreateDTO, UserResponseDTO, MessageResponseDTO
 from app.application.services.auth_service import AuthService
 from app.application.services.user_service import UserService
 from app.infrastructure.repositories.user_repository import UserRepository
-from app.core.dependencies import DatabaseDep
+from app.core.dependencies import DatabaseDep, CurrentUserDep
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -59,3 +66,49 @@ async def refresh_token(
 ) -> TokenDTO:
     """Refresh access token."""
     return await auth_service.refresh_token(token_data.refresh_token)
+
+
+@router.get("/me", response_model=UserResponseDTO)
+async def get_current_user(
+    current_user: CurrentUserDep,
+    user_service: Annotated[UserService, Depends(get_user_service)]
+) -> UserResponseDTO:
+    """Get current authenticated user details."""
+    user = await user_service.get_user(current_user.id)
+    return user
+
+
+@router.post("/password-reset/request", response_model=MessageResponseDTO)
+async def request_password_reset(
+    request_data: PasswordResetRequestDTO,
+    auth_service: Annotated[AuthService, Depends(get_auth_service)]
+) -> MessageResponseDTO:
+    """Request password reset email."""
+    await auth_service.request_password_reset(request_data.email)
+    # Always return success to prevent email enumeration
+    return MessageResponseDTO(
+        message="If an account exists with this email, a password reset link has been sent."
+    )
+
+
+@router.post("/password-reset/confirm", response_model=MessageResponseDTO)
+async def confirm_password_reset(
+    reset_data: PasswordResetConfirmDTO,
+    auth_service: Annotated[AuthService, Depends(get_auth_service)]
+) -> MessageResponseDTO:
+    """Confirm password reset with token."""
+    await auth_service.confirm_password_reset(reset_data.token, reset_data.new_password)
+    return MessageResponseDTO(message="Password has been reset successfully.")
+
+
+@router.post("/verify-email/{token}", response_model=EmailVerificationDTO)
+async def verify_email(
+    token: str,
+    auth_service: Annotated[AuthService, Depends(get_auth_service)]
+) -> EmailVerificationDTO:
+    """Verify user email with token."""
+    result = await auth_service.verify_email(token)
+    return EmailVerificationDTO(
+        message="Email verified successfully.",
+        email_verified=result
+    )
