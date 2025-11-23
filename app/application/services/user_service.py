@@ -14,6 +14,8 @@ from app.application.dtos.user_dto import (
     UserActivityStatsDTO,
 )
 from app.core.security import get_password_hash, verify_password
+from app.infrastructure.cache.token_storage import token_storage
+from app.infrastructure.tasks import send_email_verification
 
 
 class UserService:
@@ -56,6 +58,18 @@ class UserService:
 
         # Save to repository
         created_user = await self.user_repository.create(user)
+        
+        # Generate and send email verification token
+        verification_token = await token_storage.generate_email_verification_token(
+            created_user.id,
+            created_user.email
+        )
+        
+        send_email_verification.delay(
+            email=created_user.email,
+            verification_token=verification_token,
+            user_name=created_user.full_name
+        )
 
         return UserResponseDTO(
             id=created_user.id,

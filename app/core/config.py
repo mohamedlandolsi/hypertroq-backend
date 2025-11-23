@@ -76,6 +76,9 @@ class Settings(BaseSettings):
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+    
+    # Frontend URL for email links
+    FRONTEND_URL: str = "http://localhost:3000"
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
