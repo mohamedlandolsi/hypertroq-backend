@@ -29,6 +29,7 @@ class UserRepository(IUserRepository):
             is_active=model.is_active,
             is_verified=model.is_verified,
             profile_image_url=model.profile_image_url,
+            deletion_requested_at=model.deletion_requested_at,
         )
 
     def _to_model(self, entity: User) -> UserModel:
@@ -43,6 +44,7 @@ class UserRepository(IUserRepository):
             is_active=entity.is_active,
             is_verified=entity.is_verified,
             profile_image_url=entity.profile_image_url,
+            deletion_requested_at=entity.deletion_requested_at,
         )
 
     async def get_by_id(self, id: UUID) -> User | None:
@@ -111,6 +113,7 @@ class UserRepository(IUserRepository):
             model.is_active = entity.is_active
             model.is_verified = entity.is_verified
             model.profile_image_url = entity.profile_image_url
+            model.deletion_requested_at = entity.deletion_requested_at
             
             await self.session.commit()
             await self.session.refresh(model)

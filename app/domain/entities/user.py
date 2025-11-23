@@ -25,6 +25,7 @@ class User(Entity):
         is_active: bool = True,
         is_verified: bool = False,
         profile_image_url: str | None = None,
+        deletion_requested_at: datetime | None = None,
         id: UUID | None = None,
     ) -> None:
         """Initialize User entity.
@@ -38,6 +39,7 @@ class User(Entity):
             is_active: Whether the account is active
             is_verified: Whether the email has been verified
             profile_image_url: Optional URL to profile image
+            deletion_requested_at: Optional timestamp of deletion request (for grace period)
             id: Optional UUID (generated if not provided)
             
         Raises:
@@ -64,6 +66,7 @@ class User(Entity):
         self._is_active = is_active
         self._is_verified = is_verified
         self._profile_image_url = profile_image_url
+        self._deletion_requested_at = deletion_requested_at
 
     @property
     def email(self) -> str:
@@ -105,9 +108,18 @@ class User(Entity):
         """Get profile image URL."""
         return self._profile_image_url
 
+    @property
+    def deletion_requested_at(self) -> datetime | None:
+        """Get deletion request timestamp."""
+        return self._deletion_requested_at
+
     def is_admin(self) -> bool:
         """Check if user has admin role."""
         return self._role == UserRole.ADMIN
+    
+    def is_pending_deletion(self) -> bool:
+        """Check if account deletion has been requested."""
+        return self._deletion_requested_at is not None
 
     def activate(self) -> None:
         """Activate user account."""
@@ -171,3 +183,18 @@ class User(Entity):
     def demote_to_user(self) -> None:
         """Demote user to regular user role."""
         self._role = UserRole.USER
+
+    def request_deletion(self) -> None:
+        """Request account deletion (starts 30-day grace period).
+        
+        Sets deletion_requested_at to current UTC time.
+        """
+        from datetime import timezone
+        self._deletion_requested_at = datetime.now(timezone.utc)
+    
+    def cancel_deletion(self) -> None:
+        """Cancel pending account deletion request.
+        
+        Clears deletion_requested_at timestamp.
+        """
+        self._deletion_requested_at = None

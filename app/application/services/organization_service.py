@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 
 from app.domain.entities.organization import Organization, SubscriptionTier, SubscriptionStatus
 from app.domain.interfaces.organization_repository import IOrganizationRepository
+from app.domain.interfaces.user_repository import IUserRepository
 from app.application.dtos.organization_dto import (
     OrganizationCreateDTO,
     OrganizationUpdateDTO,
@@ -16,9 +17,14 @@ from app.application.dtos.organization_dto import (
 class OrganizationService:
     """Service for organization-related business logic."""
 
-    def __init__(self, organization_repository: IOrganizationRepository) -> None:
-        """Initialize organization service with repository."""
+    def __init__(
+        self,
+        organization_repository: IOrganizationRepository,
+        user_repository: IUserRepository,
+    ) -> None:
+        """Initialize organization service with repositories."""
         self.organization_repository = organization_repository
+        self.user_repository = user_repository
 
     async def create_organization(self, org_data: OrganizationCreateDTO) -> OrganizationResponseDTO:
         """Create a new organization with FREE tier."""
@@ -59,6 +65,47 @@ class OrganizationService:
             lemonsqueezy_subscription_id=org.lemonsqueezy_subscription_id,
             created_at=org.created_at,
             updated_at=org.updated_at,
+        )
+
+    async def get_organization_with_stats(
+        self, org_id: UUID
+    ) -> OrganizationWithStatsDTO:
+        """
+        Get organization with statistics.
+        
+        Args:
+            org_id: Organization UUID
+            
+        Returns:
+            OrganizationWithStatsDTO with user count and feature flags
+            
+        Raises:
+            HTTPException: If organization not found
+        """
+        org = await self.organization_repository.get_by_id(org_id)
+        if not org:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Organization not found"
+            )
+
+        # Get user count for organization
+        users = await self.user_repository.get_by_organization(org_id, skip=0, limit=1000)
+        user_count = len(users)
+
+        return OrganizationWithStatsDTO(
+            id=org.id,
+            name=org.name,
+            subscription_tier=org.subscription_tier,
+            subscription_status=org.subscription_status,
+            lemonsqueezy_customer_id=org.lemonsqueezy_customer_id,
+            lemonsqueezy_subscription_id=org.lemonsqueezy_subscription_id,
+            created_at=org.created_at,
+            updated_at=org.updated_at,
+            user_count=user_count,
+            can_create_custom_exercises=org.can_create_custom_exercises(),
+            can_create_programs=org.can_create_programs(),
+            has_unlimited_ai_queries=org.has_unlimited_ai_queries(),
         )
 
     async def update_organization(

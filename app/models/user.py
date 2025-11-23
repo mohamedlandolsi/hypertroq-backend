@@ -1,5 +1,6 @@
 """SQLAlchemy User model."""
-from sqlalchemy import Boolean, String, ForeignKey, Enum as SQLEnum
+from datetime import datetime
+from sqlalchemy import Boolean, String, ForeignKey, Enum as SQLEnum, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -70,6 +71,13 @@ class UserModel(BaseModel):
         String(500),
         nullable=True,
         doc="URL to user's profile image"
+    )
+
+    # Deletion Grace Period
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        doc="Timestamp when account deletion was requested (for 30-day grace period)"
     )
 
     # Relationships

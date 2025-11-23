@@ -1,10 +1,18 @@
 """User service for business logic."""
+from datetime import datetime, timezone
+from typing import Optional
 from uuid import UUID
 from fastapi import HTTPException, status
 
 from app.domain.entities.user import User, UserRole
 from app.domain.interfaces.user_repository import IUserRepository
-from app.application.dtos.user_dto import UserCreateDTO, UserUpdateDTO, UserResponseDTO
+from app.application.dtos.user_dto import (
+    UserCreateDTO,
+    UserUpdateDTO,
+    UserResponseDTO,
+    PasswordChangeDTO,
+    UserActivityStatsDTO,
+)
 from app.core.security import get_password_hash, verify_password
 
 
@@ -145,8 +153,23 @@ class UserService:
             updated_at=updated_user.updated_at,
         )
 
-    async def delete_user(self, user_id: UUID) -> bool:
-        """Delete user by ID."""
+    async def delete_user(self, user_id: UUID) -> dict:
+        """Request user account deletion (30-day grace period).
+        
+        Marks account for deletion instead of immediately deleting.
+        Account will be permanently deleted 30 days after request.
+        
+        Args:
+            user_id: User UUID
+            
+        Returns:
+            dict with deletion date and grace period info
+            
+        Raises:
+            HTTPException: If user not found
+        """
+        from datetime import timedelta, timezone
+        
         user = await self.user_repository.get_by_id(user_id)
         if not user:
             raise HTTPException(
@@ -154,7 +177,49 @@ class UserService:
                 detail="User not found"
             )
 
-        return await self.user_repository.delete(user_id)
+        # Mark for deletion (30-day grace period)
+        user.request_deletion()
+        await self.user_repository.update(user)
+        
+        # Calculate deletion date
+        deletion_date = user.deletion_requested_at + timedelta(days=30)
+        
+        return {
+            "requested_at": user.deletion_requested_at.isoformat(),
+            "deletion_date": deletion_date.isoformat(),
+            "days_remaining": 30,
+            "message": "Account deletion requested. You have 30 days to cancel."
+        }
+    
+    async def cancel_deletion(self, user_id: UUID) -> bool:
+        """Cancel pending account deletion request.
+        
+        Args:
+            user_id: User UUID
+            
+        Returns:
+            True if cancellation successful
+            
+        Raises:
+            HTTPException: If user not found or no deletion pending
+        """
+        user = await self.user_repository.get_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        if not user.is_pending_deletion():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No deletion request pending"
+            )
+        
+        user.cancel_deletion()
+        await self.user_repository.update(user)
+        
+        return True
 
     async def authenticate_user(self, email: str, password: str) -> User | None:
         """Authenticate user by email and password."""
@@ -190,4 +255,86 @@ class UserService:
             profile_image_url=updated_user.profile_image_url,
             created_at=updated_user.created_at,
             updated_at=updated_user.updated_at,
+        )
+
+    async def change_password(
+        self, user_id: UUID, password_data: PasswordChangeDTO
+    ) -> bool:
+        """
+        Change user password.
+        
+        Args:
+            user_id: User UUID
+            password_data: Current and new password
+            
+        Returns:
+            True if password changed successfully
+            
+        Raises:
+            HTTPException: If user not found or current password is incorrect
+        """
+        user = await self.user_repository.get_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        # Verify current password
+        if not verify_password(password_data.current_password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is incorrect"
+            )
+
+        # Update password
+        hashed_password = get_password_hash(password_data.new_password)
+        user.update_password(hashed_password)
+        await self.user_repository.update(user)
+
+        return True
+
+    async def get_user_activity_stats(
+        self, 
+        user_id: UUID,
+        program_repository: Optional[any] = None
+    ) -> UserActivityStatsDTO:
+        """
+        Get user activity statistics.
+        
+        Args:
+            user_id: User UUID
+            program_repository: Optional program repository for real counts
+            
+        Returns:
+            UserActivityStatsDTO with activity metrics
+            
+        Raises:
+            HTTPException: If user not found
+        """
+        user = await self.user_repository.get_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        # Calculate account age
+        account_age = (datetime.now(timezone.utc) - user.created_at).days
+
+        # Get real counts if program repository is provided
+        programs_count = 0
+        if program_repository:
+            programs_count = await program_repository.count_user_programs(
+                org_id=user.organization_id,
+                user_id=user_id
+            )
+
+        # TODO: Add sessions and exercises counts when those repositories are available
+        return UserActivityStatsDTO(
+            programs_created=programs_count,
+            sessions_created=0,  # TODO: Implement when session repository is available
+            exercises_created=0,  # TODO: Implement when exercise repository is available
+            last_active=user.updated_at,
+            account_age_days=account_age,
         )
