@@ -8,7 +8,21 @@ Requirements:
     pip install requests python-dotenv
 
 Usage:
+    # Set credentials via environment variables (recommended)
+    export DEMO_EMAIL="your-email@example.com"
+    export DEMO_PASSWORD="YourSecurePassword!"
+    
+    # Or on Windows PowerShell:
+    $env:DEMO_EMAIL="your-email@example.com"
+    $env:DEMO_PASSWORD="YourSecurePassword!"
+    
+    # Run the example
     python python_client.py
+
+Security:
+    ⚠️  NEVER hardcode credentials in production code!
+    ⚠️  Always use environment variables or secure secret management
+    ⚠️  The demo credentials in this file are for example purposes only
 """
 
 import requests
@@ -409,6 +423,17 @@ def main():
     
     print("\n=== HypertroQ API Client Example ===\n")
     
+    # Configuration - Use environment variables in production!
+    import os
+    from datetime import datetime
+    
+    # Generate unique email for demo to avoid conflicts
+    demo_email = os.getenv("DEMO_EMAIL", f"demo_{datetime.now().strftime('%Y%m%d_%H%M%S')}@example.com")
+    demo_password = os.getenv("DEMO_PASSWORD", "ChangeMe123!")  # Change this!
+    
+    print(f"📧 Using demo email: {demo_email}")
+    print("⚠️  For production, set DEMO_EMAIL and DEMO_PASSWORD environment variables\n")
+    
     # 1. Check API health
     print("1️⃣ Checking API health...")
     health = client.health_check()
@@ -420,15 +445,15 @@ def main():
     print("2️⃣ Authenticating...")
     try:
         client.register(
-            email="demo@example.com",
-            password="SecureDemo123!",
+            email=demo_email,
+            password=demo_password,
             full_name="Demo User"
         )
     except requests.exceptions.HTTPError:
         # User already exists, login instead
         client.login(
-            email="demo@example.com",
-            password="SecureDemo123!"
+            email=demo_email,
+            password=demo_password
         )
     print()
     

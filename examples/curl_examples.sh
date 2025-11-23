@@ -19,8 +19,18 @@ API_BASE="${BASE_URL}/api/${API_VERSION}"
 # Store tokens in variables (will be set by authentication commands)
 ACCESS_TOKEN=""
 REFRESH_TOKEN=""
-USER_EMAIL="demo@example.com"
-USER_PASSWORD="SecureDemo123!"
+
+# ⚠️ SECURITY: Use environment variables for credentials
+# Set these before running: export DEMO_EMAIL="user@example.com" DEMO_PASSWORD="password"
+USER_EMAIL="${DEMO_EMAIL:-demo_$(date +%s)@example.com}"
+USER_PASSWORD="${DEMO_PASSWORD:-ChangeMe123!}"
+
+if [ -z "$DEMO_EMAIL" ] || [ -z "$DEMO_PASSWORD" ]; then
+    echo "⚠️  Warning: Using generated demo credentials"
+    echo "   Set DEMO_EMAIL and DEMO_PASSWORD environment variables for custom credentials"
+    echo "   Example: export DEMO_EMAIL='user@example.com' DEMO_PASSWORD='YourPassword'"
+    echo ""
+fi
 
 # Colors for output
 GREEN='\033[0;32m'

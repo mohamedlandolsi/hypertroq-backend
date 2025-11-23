@@ -86,9 +86,19 @@ client.logout()
 **Run the example**:
 
 ```bash
-# Make sure the API server is running
+# Set credentials via environment variables (recommended)
+export DEMO_EMAIL="your-test-email@example.com"
+export DEMO_PASSWORD="YourSecurePassword123!"
+
+# Or on Windows PowerShell:
+$env:DEMO_EMAIL="your-test-email@example.com"
+$env:DEMO_PASSWORD="YourSecurePassword123!"
+
+# Make sure the API server is running, then run
 python python_client.py
 ```
+
+**⚠️ Security Note**: Never hardcode credentials in your code. Always use environment variables or secure configuration management for sensitive data.
 
 This will:
 1. Check API health
