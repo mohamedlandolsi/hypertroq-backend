@@ -1,7 +1,7 @@
 """API v1 router configuration."""
 from fastapi import APIRouter
 
-from app.presentation.api.v1 import auth, users, health, exercises, programs
+from app.presentation.api.v1 import auth, users, health, exercises, programs, admin
 
 api_router = APIRouter()
 
@@ -11,3 +11,4 @@ api_router.include_router(auth.router)
 api_router.include_router(users.router)
 api_router.include_router(exercises.router)
 api_router.include_router(programs.router)
+api_router.include_router(admin.router)
