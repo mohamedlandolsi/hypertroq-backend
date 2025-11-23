@@ -2,6 +2,7 @@
 from app.domain.entities.base import Entity
 from app.domain.entities.exercise import Exercise
 from app.domain.entities.organization import Organization, SubscriptionStatus, SubscriptionTier
+from app.domain.entities.training_program import TrainingProgram, ScheduledSession
 from app.domain.entities.training_split import TrainingSplitType
 from app.domain.entities.training_structure import (
     StructureType,
@@ -22,6 +23,8 @@ __all__ = [
     "SubscriptionTier",
     "SubscriptionStatus",
     "Exercise",
+    "TrainingProgram",
+    "ScheduledSession",
     "TrainingSplitType",
     "StructureType",
     "WeekDay",

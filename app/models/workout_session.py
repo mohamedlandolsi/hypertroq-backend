@@ -58,6 +58,7 @@ class WorkoutSessionModel(BaseModel):
     # Foreign Key
     program_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True),
+        ForeignKey("training_programs.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
         comment="Reference to parent training program"
