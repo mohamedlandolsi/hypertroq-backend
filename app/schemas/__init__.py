@@ -21,6 +21,27 @@ from app.schemas.exercise import (
     ExerciseUpdate,
     MuscleContributionResponse,
 )
+from app.schemas.training_program import (
+    CloneProgramRequest,
+    CyclicStructureInput,
+    MuscleVolumeResponse,
+    ProgramCreate,
+    ProgramFilter,
+    ProgramListItemResponse,
+    ProgramListResponse,
+    ProgramResponse,
+    ProgramStatsResponse,
+    ProgramUpdate,
+    ScheduledSessionResponse,
+    ScheduleGenerateRequest,
+    ScheduleResponse,
+    SessionCreate,
+    SessionResponse,
+    SessionUpdate,
+    WeeklyStructureInput,
+    WorkoutExerciseInput,
+    WorkoutExerciseResponse,
+)
 
 __all__ = [
     # Auth schemas
@@ -40,4 +61,24 @@ __all__ = [
     "ExerciseListResponse",
     "ExerciseSummaryResponse",
     "MuscleContributionResponse",
+    # Training program schemas
+    "ProgramCreate",
+    "ProgramUpdate",
+    "ProgramFilter",
+    "ProgramResponse",
+    "ProgramListResponse",
+    "ProgramListItemResponse",
+    "ProgramStatsResponse",
+    "SessionCreate",
+    "SessionUpdate",
+    "SessionResponse",
+    "WorkoutExerciseInput",
+    "WorkoutExerciseResponse",
+    "MuscleVolumeResponse",
+    "WeeklyStructureInput",
+    "CyclicStructureInput",
+    "CloneProgramRequest",
+    "ScheduleGenerateRequest",
+    "ScheduleResponse",
+    "ScheduledSessionResponse",
 ]
