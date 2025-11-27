@@ -8,10 +8,12 @@ health checks, error handling, and observability.
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.error_handlers import register_exception_handlers
@@ -130,6 +132,13 @@ app.add_middleware(LoggingMiddleware)  # Log all requests
 
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+
+# Mount static files for local development (uploaded images)
+uploads_dir = Path(__file__).parent.parent / "uploads"
+if uploads_dir.exists() or settings.ENVIRONMENT == "development":
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
+    logger.info(f"Static uploads mounted at /uploads -> {uploads_dir}")
 
 
 # ============================================================================

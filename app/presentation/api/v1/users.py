@@ -176,7 +176,7 @@ async def upload_profile_image(
         optimized_image, metadata = optimize_profile_image(image_content)
         
         logger.info(
-            f"Image optimized for user {current_user_id}: "
+            f"Image optimized for user {current_user.id}: "
             f"{metadata['original_size_kb']:.1f}KB -> {metadata['final_size_kb']:.1f}KB "
             f"({metadata['reduction_percent']:.1f}% reduction)"
         )
@@ -190,7 +190,7 @@ async def upload_profile_image(
     
     try:
         # Upload optimized image to cloud storage
-        file_path = f"users/{current_user_id}/profile.jpg"  # Always save as JPEG
+        file_path = f"users/{current_user.id}/profile.jpg"  # Always save as JPEG
         image_url = await storage_client.upload_file(
             file_content=optimized_image,
             bucket_name="hypertroq-user-uploads",

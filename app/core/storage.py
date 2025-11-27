@@ -3,10 +3,14 @@ Google Cloud Storage utility functions.
 
 Provides file upload, download, deletion, and signed URL generation
 for Google Cloud Storage buckets.
+
+Falls back to local file storage when GCS is not available (local development).
 """
 
 import logging
+import os
 from datetime import timedelta
+from pathlib import Path
 from typing import Optional
 
 from google.cloud import storage
@@ -15,6 +19,77 @@ from google.cloud.exceptions import GoogleCloudError, NotFound
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+# Local storage directory for development
+LOCAL_STORAGE_DIR = Path(__file__).parent.parent.parent / "uploads"
+
+
+class LocalStorageClient:
+    """
+    Local file storage client for development.
+    
+    Mimics the CloudStorageClient interface but stores files locally.
+    """
+
+    def __init__(self) -> None:
+        """Initialize local storage directory."""
+        LOCAL_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Local storage initialized at: {LOCAL_STORAGE_DIR}")
+
+    async def upload_file(
+        self,
+        file_content: bytes,
+        bucket_name: str,
+        file_path: str,
+        content_type: Optional[str] = None,
+        make_public: bool = False,
+    ) -> Optional[str]:
+        """Store file locally and return a local URL."""
+        try:
+            # Create directory structure
+            full_path = LOCAL_STORAGE_DIR / bucket_name / file_path
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Write file
+            full_path.write_bytes(file_content)
+            
+            # Return URL that can be served by FastAPI static files
+            # Format: /uploads/bucket_name/file_path
+            local_url = f"http://localhost:8000/uploads/{bucket_name}/{file_path}"
+            logger.info(f"File stored locally: {full_path} -> {local_url}")
+            return local_url
+            
+        except Exception as e:
+            logger.error(f"Failed to store file locally: {e}")
+            return None
+
+    async def delete_file(self, bucket_name: str, file_path: str) -> bool:
+        """Delete file from local storage."""
+        try:
+            full_path = LOCAL_STORAGE_DIR / bucket_name / file_path
+            if full_path.exists():
+                full_path.unlink()
+                logger.info(f"File deleted: {full_path}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Failed to delete file: {e}")
+            return False
+
+    async def get_signed_url(
+        self,
+        bucket_name: str,
+        file_path: str,
+        expiration: timedelta = timedelta(hours=1),
+        method: str = "GET",
+    ) -> Optional[str]:
+        """Return local URL (no signing needed for local dev)."""
+        return f"http://localhost:8000/uploads/{bucket_name}/{file_path}"
+
+    async def file_exists(self, bucket_name: str, file_path: str) -> bool:
+        """Check if file exists locally."""
+        full_path = LOCAL_STORAGE_DIR / bucket_name / file_path
+        return full_path.exists()
 
 
 class CloudStorageClient:
@@ -291,7 +366,13 @@ class CloudStorageClient:
 
 
 # Global storage client instance
-storage_client = CloudStorageClient()
+# Use local storage fallback when GCS is not available (local development)
+_gcs_client = CloudStorageClient()
+if _gcs_client.client is None:
+    logger.warning("GCS not available, using local file storage for development")
+    storage_client = LocalStorageClient()
+else:
+    storage_client = _gcs_client
 
 
 # Convenience functions for common operations

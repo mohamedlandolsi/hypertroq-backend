@@ -57,6 +57,7 @@ class UserResponseDTO(BaseModel):
     is_active: bool
     is_verified: bool
     profile_image_url: str | None
+    deletion_requested_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 

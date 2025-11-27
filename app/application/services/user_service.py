@@ -80,6 +80,7 @@ class UserService:
             is_active=created_user.is_active,
             is_verified=created_user.is_verified,
             profile_image_url=created_user.profile_image_url,
+            deletion_requested_at=created_user.deletion_requested_at,
             created_at=created_user.created_at,
             updated_at=created_user.updated_at,
         )
@@ -102,6 +103,7 @@ class UserService:
             is_active=user.is_active,
             is_verified=user.is_verified,
             profile_image_url=user.profile_image_url,
+            deletion_requested_at=user.deletion_requested_at,
             created_at=user.created_at,
             updated_at=user.updated_at,
         )
@@ -124,6 +126,7 @@ class UserService:
                 is_active=user.is_active,
                 is_verified=user.is_verified,
                 profile_image_url=user.profile_image_url,
+                deletion_requested_at=user.deletion_requested_at,
                 created_at=user.created_at,
                 updated_at=user.updated_at,
             )
@@ -163,6 +166,7 @@ class UserService:
             is_active=updated_user.is_active,
             is_verified=updated_user.is_verified,
             profile_image_url=updated_user.profile_image_url,
+            deletion_requested_at=updated_user.deletion_requested_at,
             created_at=updated_user.created_at,
             updated_at=updated_user.updated_at,
         )
@@ -267,6 +271,7 @@ class UserService:
             is_active=updated_user.is_active,
             is_verified=updated_user.is_verified,
             profile_image_url=updated_user.profile_image_url,
+            deletion_requested_at=updated_user.deletion_requested_at,
             created_at=updated_user.created_at,
             updated_at=updated_user.updated_at,
         )
