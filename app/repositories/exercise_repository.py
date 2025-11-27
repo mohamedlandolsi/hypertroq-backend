@@ -5,6 +5,7 @@ Handles CRUD operations for exercises with proper authorization,
 filtering, pagination, and full-text search capabilities.
 """
 
+import logging
 from typing import List, Optional, Tuple
 from uuid import UUID
 
@@ -18,6 +19,7 @@ from app.domain.value_objects.volume_contribution import VolumeContribution
 from app.models.exercise import ExerciseModel
 from app.schemas.exercise import ExerciseFilter
 
+logger = logging.getLogger(__name__)
 
 class ExerciseRepository:
     """
@@ -243,8 +245,19 @@ class ExerciseRepository:
         result = await self.session.execute(query)
         models = result.scalars().all()
         
-        # Convert to entities
-        exercises = [self._model_to_entity(model) for model in models]
+        # Convert to entities, skipping invalid ones
+        exercises = []
+        for model in models:
+            try:
+                exercise = self._model_to_entity(model)
+                exercises.append(exercise)
+            except Exception as e:
+                # Log and skip exercises that can't be loaded
+                logger.error(
+                    f"Failed to load exercise {model.id} ('{model.name}'): {e}. "
+                    f"This exercise has invalid data and will be skipped."
+                )
+                continue
         
         return exercises, total
     
@@ -568,10 +581,20 @@ class ExerciseRepository:
             Exercise domain entity
         """
         # Convert JSONB muscle_contributions back to enums
-        muscle_contributions = {
-            MuscleGroup(muscle): VolumeContribution.from_float(contribution)
-            for muscle, contribution in model.muscle_contributions.items()
-        }
+        # Handle legacy/incorrect muscle group names
+        muscle_contributions = {}
+        for muscle, contribution in model.muscle_contributions.items():
+            # Map legacy 'QUADS' to 'QUADRICEPS'
+            if muscle == 'QUADS':
+                muscle = 'QUADRICEPS'
+            try:
+                muscle_group = MuscleGroup(muscle)
+                volume_contrib = VolumeContribution.from_float(contribution)
+                muscle_contributions[muscle_group] = volume_contrib
+            except ValueError as e:
+                # Log and skip invalid muscle groups instead of crashing
+                logger.warning(f"Invalid muscle group '{muscle}' in exercise {model.id}: {e}")
+                continue
         
         return Exercise(
             id=model.id,

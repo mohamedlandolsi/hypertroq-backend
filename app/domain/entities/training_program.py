@@ -589,19 +589,18 @@ class TrainingProgram(Entity):
         if not self._name:
             raise ValueError("Program name cannot be empty")
         
-        # Validate sessions exist
-        if not self._sessions:
-            raise ValueError("Program must have at least one session")
-        
-        # Validate session day numbers are unique
-        day_numbers = [s.day_number for s in self._sessions]
-        if len(day_numbers) != len(set(day_numbers)):
-            raise ValueError("Session day_numbers must be unique")
-        
-        # Validate session ordering
-        orders = [s.order_in_program for s in self._sessions]
-        if len(orders) != len(set(orders)):
-            raise ValueError("Session order_in_program values must be unique")
+        # Sessions are optional - can be added later
+        # Only validate if sessions exist
+        if self._sessions:
+            # Validate session day numbers are unique
+            day_numbers = [s.day_number for s in self._sessions]
+            if len(day_numbers) != len(set(day_numbers)):
+                raise ValueError("Session day_numbers must be unique")
+            
+            # Validate session ordering
+            orders = [s.order_in_program for s in self._sessions]
+            if len(orders) != len(set(orders)):
+                raise ValueError("Session order_in_program values must be unique")
         
         # Validate structure config matches structure type
         if self._structure_type == StructureType.WEEKLY:

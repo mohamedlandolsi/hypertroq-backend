@@ -1,7 +1,7 @@
 """User DTOs (Data Transfer Objects)."""
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from app.domain.entities.user import UserRole
 
 
@@ -10,7 +10,22 @@ class UserCreateDTO(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
     full_name: str
-    organization_id: UUID
+    organization_id: UUID | None = None
+    organization_name: str | None = Field(
+        None,
+        min_length=2,
+        max_length=255,
+        description="Name of organization to create when organization_id is not provided",
+    )
+
+    @model_validator(mode="after")
+    def validate_organization_target(cls, data):
+        """Ensure either organization_id or organization_name is provided."""
+        if not data.organization_id and not data.organization_name:
+            raise ValueError(
+                "Either organization_id or organization_name must be provided"
+            )
+        return data
 
 
 class UserUpdateDTO(BaseModel):
@@ -65,3 +80,4 @@ class UserActivityStatsDTO(BaseModel):
 class MessageResponseDTO(BaseModel):
     """Generic message response."""
     message: str
+

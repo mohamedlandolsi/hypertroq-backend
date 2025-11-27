@@ -11,9 +11,12 @@ from app.application.dtos.auth_dto import (
     PasswordResetConfirmDTO,
     EmailVerificationDTO,
 )
+from app.application.dtos.organization_dto import OrganizationCreateDTO
 from app.application.dtos.user_dto import UserCreateDTO, UserResponseDTO, MessageResponseDTO
 from app.application.services.auth_service import AuthService
+from app.application.services.organization_service import OrganizationService
 from app.application.services.user_service import UserService
+from app.infrastructure.repositories.organization_repository import OrganizationRepository
 from app.infrastructure.repositories.user_repository import UserRepository
 from app.core.dependencies import DatabaseDep, CurrentUserDep
 
@@ -31,13 +34,37 @@ def get_auth_service(user_service: Annotated[UserService, Depends(get_user_servi
     return AuthService(user_service)
 
 
+def get_organization_service(db: DatabaseDep) -> OrganizationService:
+    """Get organization service dependency."""
+    org_repo = OrganizationRepository(db)
+    user_repo = UserRepository(db)
+    return OrganizationService(org_repo, user_repo)
+
+
 @router.post("/register", response_model=UserResponseDTO, status_code=status.HTTP_201_CREATED)
 async def register(
     user_data: UserCreateDTO,
-    user_service: Annotated[UserService, Depends(get_user_service)]
+    user_service: Annotated[UserService, Depends(get_user_service)],
+    organization_service: Annotated[OrganizationService, Depends(get_organization_service)],
 ) -> UserResponseDTO:
-    """Register a new user."""
-    return await user_service.create_user(user_data)
+    """Register a new user and organization when needed."""
+    organization_id = user_data.organization_id
+
+    if organization_id is None:
+        # Create a new organization when only organization_name is provided
+        organization = await organization_service.create_organization(
+            OrganizationCreateDTO(name=user_data.organization_name)
+        )
+        organization_id = organization.id
+
+    user_payload = UserCreateDTO(
+        email=user_data.email,
+        password=user_data.password,
+        full_name=user_data.full_name,
+        organization_id=organization_id,
+    )
+
+    return await user_service.create_user(user_payload)
 
 
 @router.post("/login", response_model=TokenDTO)

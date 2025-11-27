@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from app.core.dependencies import (
     DatabaseDep,
     CurrentUserDep,
-    VerifiedUserDep,
+    # VerifiedUserDep,  # Disabled for development - use CurrentUserDep instead
     rate_limit,
 )
 from app.domain.entities.user import User
@@ -360,7 +360,7 @@ async def create_program(
     request: Request,
     program_data: ProgramCreate,
     service: ProgramServiceDep,
-    current_user: VerifiedUserDep,
+    current_user: CurrentUserDep,  # Changed from VerifiedUserDep for development
 ) -> ProgramResponse:
     """
     Create a new custom training program.
@@ -458,7 +458,7 @@ async def clone_template(
     template_id: UUID,
     clone_request: CloneProgramRequest,
     service: ProgramServiceDep,
-    current_user: VerifiedUserDep,
+    current_user: CurrentUserDep,  # Changed from VerifiedUserDep for development
 ) -> ProgramResponse:
     """
     Clone a template program for the user's organization.
@@ -549,7 +549,7 @@ async def update_program(
     program_id: UUID,
     program_data: ProgramUpdate,
     service: ProgramServiceDep,
-    current_user: VerifiedUserDep,
+    current_user: CurrentUserDep,  # Changed from VerifiedUserDep for development
 ) -> ProgramResponse:
     """
     Update program details (name, description, duration).
@@ -619,7 +619,7 @@ async def delete_program(
     request: Request,
     program_id: UUID,
     service: ProgramServiceDep,
-    current_user: VerifiedUserDep,
+    current_user: CurrentUserDep,  # Changed from VerifiedUserDep for development
 ) -> None:
     """
     Permanently delete a training program.
@@ -809,7 +809,7 @@ async def add_session(
     program_id: UUID,
     session_data: SessionCreate,
     service: ProgramServiceDep,
-    current_user: VerifiedUserDep,
+    current_user: CurrentUserDep,  # Changed from VerifiedUserDep for development
 ) -> SessionResponse:
     """
     Add a new workout session to a program.
@@ -902,7 +902,7 @@ async def update_session(
     session_id: UUID,
     session_data: SessionUpdate,
     service: ProgramServiceDep,
-    current_user: VerifiedUserDep,
+    current_user: CurrentUserDep,  # Changed from VerifiedUserDep for development
 ) -> SessionResponse:
     """
     Update a workout session's details and exercises.
@@ -980,7 +980,7 @@ async def delete_session(
     program_id: UUID,
     session_id: UUID,
     service: ProgramServiceDep,
-    current_user: VerifiedUserDep,
+    current_user: CurrentUserDep,  # Changed from VerifiedUserDep for development
 ) -> None:
     """
     Permanently delete a workout session.

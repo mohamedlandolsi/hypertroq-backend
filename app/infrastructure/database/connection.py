@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
 )
 from sqlalchemy.pool import NullPool, QueuePool
-from sqlalchemy import event
+from sqlalchemy import event, text
 
 from app.core.config import settings
 from app.infrastructure.database.base import Base
@@ -144,6 +144,35 @@ class DatabaseManager:
             self._engine = None
             self._session_maker = None
             logger.info("Database connections closed")
+    
+    async def dispose(self) -> None:
+        """
+        Dispose of the database engine and clean up connections.
+        
+        Alias for close() method for backward compatibility.
+        """
+        await self.close()
+    
+    async def test_connection(self) -> bool:
+        """
+        Test database connectivity by executing a simple query.
+        
+        Returns:
+            True if connection is successful
+        
+        Raises:
+            Exception if connection fails
+        """
+        try:
+            engine = self.get_engine()
+            async with engine.begin() as conn:
+                result = await conn.execute(text("SELECT 1"))
+                result.scalar()
+            logger.info("Database connection test successful")
+            return True
+        except Exception as e:
+            logger.error(f"Database connection test failed: {e}")
+            raise
     
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[AsyncSession, None]:

@@ -104,8 +104,9 @@ class ProgramService:
             program_data.structure_config,
         )
         
-        # Validate exercises exist
-        await self._validate_session_exercises(program_data.sessions, user)
+        # Validate exercises exist (only if sessions provided)
+        if program_data.sessions:
+            await self._validate_session_exercises(program_data.sessions, user)
         
         # Create workout sessions
         sessions = []
@@ -162,7 +163,7 @@ class ProgramService:
         
         logger.info(f"Successfully created program {created_program.id}")
         
-        return await self._program_to_response(created_program, stats)
+        return await self._program_to_response(created_program, stats, user)
     
     async def clone_from_template(
         self,
@@ -211,7 +212,7 @@ class ProgramService:
         
         logger.info(f"Successfully cloned program {cloned_program.id}")
         
-        return await self._program_to_response(cloned_program, stats)
+        return await self._program_to_response(cloned_program, stats, user)
     
     async def get_program(
         self,
@@ -243,7 +244,7 @@ class ProgramService:
         
         stats = await self._calculate_program_stats(program, user)
         
-        return await self._program_to_response(program, stats)
+        return await self._program_to_response(program, stats, user)
     
     async def update_program(
         self,
@@ -292,7 +293,7 @@ class ProgramService:
         if not update_data:
             # No changes, return current program
             stats = await self._calculate_program_stats(program, user)
-            return await self._program_to_response(program, stats)
+            return await self._program_to_response(program, stats, user)
         
         # Update program
         updated_program = await self.program_repo.update_program(
@@ -311,7 +312,7 @@ class ProgramService:
         
         logger.info(f"Successfully updated program {program_id}")
         
-        return await self._program_to_response(updated_program, stats)
+        return await self._program_to_response(updated_program, stats, user)
     
     async def delete_program(
         self,
@@ -891,17 +892,35 @@ class ProgramService:
         self,
         program: TrainingProgram,
         stats: ProgramStatsResponse,
+        user: User,
     ) -> ProgramResponse:
         """Convert program entity to response DTO.
         
         Args:
             program: Program entity
             stats: Calculated statistics
+            user: User for exercise name lookup
             
         Returns:
             ProgramResponse: Response DTO
         """
-        # Convert sessions
+        # Collect all unique exercise IDs to batch fetch
+        all_exercise_ids = set()
+        for session in program.sessions:
+            for ex in session.exercises:
+                all_exercise_ids.add(ex.exercise_id)
+        
+        # Fetch all exercises at once for efficiency
+        exercise_names: dict[str, str] = {}
+        for exercise_id in all_exercise_ids:
+            exercise = await self.exercise_repo.get_by_id(
+                exercise_id,
+                org_id=user.organization_id,
+            )
+            if exercise:
+                exercise_names[str(exercise_id)] = exercise.name
+        
+        # Convert sessions with exercise names
         session_responses = []
         for session in program.sessions:
             session_responses.append(
@@ -914,7 +933,7 @@ class ProgramService:
                     exercises=[
                         WorkoutExerciseResponse(
                             exercise_id=ex.exercise_id,
-                            exercise_name=None,  # Could be populated if needed
+                            exercise_name=exercise_names.get(str(ex.exercise_id)),
                             sets=ex.sets,
                             order_in_session=ex.order_in_session,
                             notes=ex.notes,

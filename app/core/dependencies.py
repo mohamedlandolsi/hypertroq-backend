@@ -6,7 +6,7 @@ from typing import Annotated, Any, AsyncGenerator, Callable, Optional
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -16,9 +16,10 @@ from app.core.security import decode_token, verify_token_type
 logger = logging.getLogger(__name__)
 
 
-# OAuth2 scheme for token authentication
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_PREFIX}/auth/login"
+# HTTPBearer scheme for token authentication (simpler Swagger UI)
+http_bearer = HTTPBearer(
+    scheme_name="Bearer",
+    description="Enter your JWT access token"
 )
 
 
@@ -42,8 +43,9 @@ class TokenPayload:
         self.role = role
 
 
-async def get_token_payload(token: Annotated[str, Depends(oauth2_scheme)]) -> TokenPayload:
+async def get_token_payload(credentials: Annotated[HTTPAuthorizationCredentials, Depends(http_bearer)]) -> TokenPayload:
     """Get token payload with user and organization context."""
+    token = credentials.credentials
     payload = decode_token(token)
     verify_token_type(payload, "access")
     
@@ -82,7 +84,7 @@ async def require_admin_role(token_payload: Annotated[TokenPayload, Depends(get_
 
 
 async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(http_bearer)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Any:
     """
@@ -111,9 +113,12 @@ async def get_current_user(
         - Checks token type and expiration
         - Verifies user still exists in database
     """
-    from app.repositories.user_repository import UserRepository
+    from app.infrastructure.repositories.user_repository import UserRepository
 
     try:
+        # Extract token from credentials
+        token = credentials.credentials
+        
         # Decode and validate token
         payload = decode_token(token)
         
@@ -297,7 +302,7 @@ async def get_current_organization(
         ):
             return org.settings
     """
-    from app.repositories.organization_repository import OrganizationRepository
+    from app.infrastructure.repositories.organization_repository import OrganizationRepository
 
     try:
         org_repo = OrganizationRepository(db)
@@ -457,3 +462,4 @@ CurrentOrganizationDep = Annotated[Any, Depends(get_current_organization)]
 
 # Role-based token dependency (lightweight)
 AdminRoleDep = Annotated[TokenPayload, Depends(require_admin_role)]
+

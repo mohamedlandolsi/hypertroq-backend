@@ -2,19 +2,15 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 import secrets
+import bcrypt
 from jose import JWTError, jwt, ExpiredSignatureError
-from passlib.context import CryptContext
 from fastapi import HTTPException, status
 
 from app.core.config import settings
 
 
-# Password hashing context with secure configuration
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-    bcrypt__rounds=12  # Higher rounds for better security
-)
+# Password hashing rounds for bcrypt (12 = good balance of security and performance)
+BCRYPT_ROUNDS = 12
 
 
 # Exception classes for better error handling
@@ -43,6 +39,9 @@ def hash_password(password: str) -> str:
     """
     Hash a plain password using bcrypt.
     
+    Uses bcrypt directly for Python 3.13 compatibility.
+    Bcrypt has a 72-byte limit, so passwords are truncated if necessary.
+    
     Args:
         password: Plain text password to hash
         
@@ -54,12 +53,23 @@ def hash_password(password: str) -> str:
     """
     if not password or len(password) < 8:
         raise ValueError("Password must be at least 8 characters long")
-    return pwd_context.hash(password)
+    
+    # Truncate password to 72 bytes for bcrypt compatibility
+    password_bytes = password.encode('utf-8')[:72]
+    
+    # Generate salt and hash password
+    salt = bcrypt.gensalt(rounds=BCRYPT_ROUNDS)
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    
+    # Return as string
+    return hashed.decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verify a plain password against a hashed password.
+    
+    Uses bcrypt directly for Python 3.13 compatibility.
     
     Args:
         plain_password: Plain text password to verify
@@ -69,7 +79,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         True if password matches, False otherwise
     """
     try:
-        return pwd_context.verify(plain_password, hashed_password)
+        # Truncate password to 72 bytes for bcrypt compatibility
+        password_bytes = plain_password.encode('utf-8')[:72]
+        hashed_bytes = hashed_password.encode('utf-8')
+        
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
     except Exception:
         return False
 

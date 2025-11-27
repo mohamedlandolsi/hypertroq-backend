@@ -90,6 +90,17 @@ class RedisClient:
         
         return await self.redis.expire(key, seconds)
 
+    async def ping(self) -> bool:
+        """Ping Redis server to test connection."""
+        if not self.redis:
+            return False
+        
+        try:
+            await self.redis.ping()
+            return True
+        except Exception:
+            return False
+
 
 # Global Redis client instance
 redis_client = RedisClient()

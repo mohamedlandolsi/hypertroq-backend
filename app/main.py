@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
     
     # Initialize database
     try:
-        db_manager = DatabaseManager()
+        from app.infrastructure.database.connection import db_manager
         await db_manager.test_connection()
         logger.info("✓ Database connection established")
     except Exception as e:
@@ -193,7 +193,7 @@ async def health_check_database() -> dict[str, Any]:
         Database connection status
     """
     try:
-        db_manager = DatabaseManager()
+        from app.infrastructure.database.connection import db_manager
         await db_manager.test_connection()
         return {
             "status": "healthy",

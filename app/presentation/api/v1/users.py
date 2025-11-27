@@ -70,7 +70,7 @@ def get_organization_service(db: DatabaseDep) -> OrganizationService:
     description="Retrieve the authenticated user's profile with organization and subscription details",
 )
 async def get_current_user_profile(
-    current_user_id: CurrentUserDep,
+    current_user: CurrentUserDep,
     user_service: Annotated[UserService, Depends(get_user_service)],
     org_service: Annotated[OrganizationService, Depends(get_organization_service)],
 ) -> UserWithOrganizationDTO:
@@ -84,7 +84,7 @@ async def get_current_user_profile(
         - Subscription tier and status
         - Profile image URL
     """
-    user = await user_service.get_user(UUID(current_user_id))
+    user = await user_service.get_user(current_user.id)
     organization = await org_service.get_organization(user.organization_id)
     
     return UserWithOrganizationDTO(
@@ -101,7 +101,7 @@ async def get_current_user_profile(
 )
 async def update_user_profile(
     profile_data: UserProfileUpdateDTO,
-    current_user_id: CurrentUserDep,
+    current_user: CurrentUserDep,
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> UserResponseDTO:
     """
@@ -119,7 +119,7 @@ async def update_user_profile(
         full_name=profile_data.full_name,
     )
     
-    return await user_service.update_user(UUID(current_user_id), update_data)
+    return await user_service.update_user(current_user.id, update_data)
 
 
 @router.put(
@@ -130,7 +130,7 @@ async def update_user_profile(
 )
 async def upload_profile_image(
     image: UploadFile = File(...),
-    current_user_id: CurrentUserDep = None,
+    current_user: CurrentUserDep = None,
     user_service: Annotated[UserService, Depends(get_user_service)] = None,
 ) -> UserResponseDTO:
     """
@@ -209,7 +209,7 @@ async def upload_profile_image(
         from app.application.dtos.user_dto import UserUpdateDTO
         
         update_data = UserUpdateDTO(profile_image_url=image_url)
-        return await user_service.update_user(UUID(current_user_id), update_data)
+        return await user_service.update_user(current_user.id, update_data)
         
     except Exception as e:
         logger.error(f"Failed to upload profile image: {e}")
@@ -227,7 +227,7 @@ async def upload_profile_image(
 )
 async def change_password(
     password_data: PasswordChangeDTO,
-    current_user_id: CurrentUserDep,
+    current_user: CurrentUserDep,
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> MessageResponseDTO:
     """
@@ -250,10 +250,10 @@ async def change_password(
     from app.infrastructure.email.service import EmailService
     
     # Change password
-    await user_service.change_password(UUID(current_user_id), password_data)
+    await user_service.change_password(current_user.id, password_data)
     
     # Send confirmation email
-    user_dto = await user_service.get_user(UUID(current_user_id))
+    user_dto = await user_service.get_user(current_user.id)
     email_service = EmailService()
     await email_service.send_password_change_email(
         to_email=user_dto.email,
@@ -275,7 +275,7 @@ async def change_password(
     description="Retrieve organization details including team members and subscription info",
 )
 async def get_user_organization(
-    current_user_id: CurrentUserDep,
+    current_user: CurrentUserDep,
     user_service: Annotated[UserService, Depends(get_user_service)],
     org_service: Annotated[OrganizationService, Depends(get_organization_service)],
 ) -> OrganizationWithStatsDTO:
@@ -289,7 +289,7 @@ async def get_user_organization(
         - User count
         - Feature availability flags
     """
-    user = await user_service.get_user(UUID(current_user_id))
+    user = await user_service.get_user(current_user.id)
     organization = await org_service.get_organization_with_stats(user.organization_id)
     return organization
 
@@ -306,7 +306,7 @@ async def get_user_organization(
     description="List all programs created by the user",
 )
 async def get_user_programs(
-    current_user_id: CurrentUserDep,
+    current_user: CurrentUserDep,
     user_service: Annotated[UserService, Depends(get_user_service)],
     db: DatabaseDep,
     skip: int = 0,
@@ -352,7 +352,7 @@ async def get_user_programs(
     from app.repositories.program_repository import ProgramRepository
     
     # Get current user
-    user_dto = await user_service.get_user(UUID(current_user_id))
+    user_dto = await user_service.get_user(current_user.id)
     
     # Create program repository
     program_repo = ProgramRepository(db)
@@ -360,7 +360,7 @@ async def get_user_programs(
     # Get user's programs (non-templates, from their organization)
     programs = await program_repo.get_user_programs(
         org_id=UUID(user_dto.organization_id),
-        user_id=UUID(current_user_id)
+        user_id=current_user.id
     )
     
     # Apply pagination manually (programs are already sorted by created_at desc)
@@ -406,7 +406,7 @@ async def get_user_programs(
     description="Retrieve user activity statistics including programs, exercises, and last active date",
 )
 async def get_user_activity(
-    current_user_id: CurrentUserDep,
+    current_user: CurrentUserDep,
     user_service: Annotated[UserService, Depends(get_user_service)],
     db: DatabaseDep,
 ) -> UserActivityStatsDTO:
@@ -427,7 +427,7 @@ async def get_user_activity(
     program_repo = ProgramRepository(db)
     
     return await user_service.get_user_activity_stats(
-        UUID(current_user_id),
+        current_user.id,
         program_repository=program_repo
     )
 
@@ -444,7 +444,7 @@ async def get_user_activity(
     description="Request account deletion with 30-day grace period",
 )
 async def request_account_deletion(
-    current_user_id: CurrentUserDep,
+    current_user: CurrentUserDep,
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> dict:
     """
@@ -471,10 +471,10 @@ async def request_account_deletion(
     from datetime import timedelta
     
     # Request deletion (marks for deletion, doesn't actually delete)
-    deletion_info = await user_service.delete_user(UUID(current_user_id))
+    deletion_info = await user_service.delete_user(current_user.id)
     
     # Get user details for email
-    user_dto = await user_service.get_user(UUID(current_user_id))
+    user_dto = await user_service.get_user(current_user.id)
     
     # Send deletion confirmation email
     email_service = EmailService()
@@ -498,7 +498,7 @@ async def request_account_deletion(
     description="Cancel pending account deletion request",
 )
 async def cancel_account_deletion(
-    current_user_id: CurrentUserDep,
+    current_user: CurrentUserDep,
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> MessageResponseDTO:
     """
@@ -519,10 +519,10 @@ async def cancel_account_deletion(
     from app.infrastructure.email.service import EmailService
     
     # Cancel deletion
-    await user_service.cancel_deletion(UUID(current_user_id))
+    await user_service.cancel_deletion(current_user.id)
     
     # Get user details for email
-    user_dto = await user_service.get_user(UUID(current_user_id))
+    user_dto = await user_service.get_user(current_user.id)
     
     # Send cancellation confirmation email
     email_service = EmailService()

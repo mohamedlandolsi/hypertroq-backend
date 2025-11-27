@@ -368,8 +368,8 @@ class WorkoutSession(Entity):
             1. Name must not be empty
             2. day_number must be positive
             3. order_in_program must be positive
-            4. Must have at least one exercise
-            5. Exercise order_in_session must be unique and sequential
+            4. Exercises can be empty (added later via editor)
+            5. If exercises exist, order_in_session must be unique
             6. Total sets should be reasonable (warn if > 30)
             7. No duplicate exercises
             
@@ -388,19 +388,18 @@ class WorkoutSession(Entity):
         if self._order_in_program < 1:
             raise ValueError("order_in_program must be at least 1")
         
-        # Validate exercises exist
-        if not self._exercises:
-            raise ValueError("Session must have at least one exercise")
-        
-        # Validate exercise ordering
-        orders = [e.order_in_session for e in self._exercises]
-        if len(orders) != len(set(orders)):
-            raise ValueError("Exercise order_in_session values must be unique")
-        
-        # Validate no duplicate exercises
-        exercise_ids = [e.exercise_id for e in self._exercises]
-        if len(exercise_ids) != len(set(exercise_ids)):
-            raise ValueError("Session cannot contain duplicate exercises")
+        # Exercises can be empty - they can be added later via the editor
+        # Only validate if exercises exist
+        if self._exercises:
+            # Validate exercise ordering
+            orders = [e.order_in_session for e in self._exercises]
+            if len(orders) != len(set(orders)):
+                raise ValueError("Exercise order_in_session values must be unique")
+            
+            # Validate no duplicate exercises
+            exercise_ids = [e.exercise_id for e in self._exercises]
+            if len(exercise_ids) != len(set(exercise_ids)):
+                raise ValueError("Session cannot contain duplicate exercises")
         
         # Warn about excessive total sets
         total_sets = self.calculate_total_sets()

@@ -16,18 +16,15 @@ from uuid import UUID
 from fastapi import (
     APIRouter,
     Depends,
-    File,
     HTTPException,
     Query,
     Request,
     Response,
-    UploadFile,
     status,
 )
 
 from app.core.dependencies import (
     DatabaseDep,
-    VerifiedUserDep,
     CurrentUserDep,
     rate_limit,
 )
@@ -418,9 +415,8 @@ async def get_exercise(
 async def create_exercise(
     request: Request,
     exercise_data: ExerciseCreate,
-    current_user: VerifiedUserDep,
+    current_user: CurrentUserDep,  # Changed from VerifiedUserDep for development
     exercise_service: Annotated[ExerciseService, Depends(get_exercise_service)],
-    image: UploadFile | None = File(None, description="Exercise image/video (optional)"),
 ) -> ExerciseResponse:
     """
     Create a new exercise.
@@ -457,13 +453,6 @@ async def create_exercise(
     - At least one muscle must have PRIMARY (1.0) contribution
     - Sum of muscle contributions must be >= 1.0
     """
-    # TODO: Handle image upload
-    if image:
-        logger.info(f"Image upload received: {image.filename}, size={image.size}")
-        # Validate file type and size
-        # Upload to Cloud Storage
-        # Set image_url in exercise_data
-    
     result = await exercise_service.create_exercise(
         exercise_data=exercise_data,
         user=current_user,
@@ -519,7 +508,6 @@ async def update_exercise(
     exercise_data: ExerciseUpdate,
     current_user: CurrentUserDep,
     exercise_service: Annotated[ExerciseService, Depends(get_exercise_service)],
-    image: UploadFile | None = File(None, description="New exercise image/video (optional)"),
 ) -> ExerciseResponse:
     """
     Update an existing exercise.
@@ -544,11 +532,6 @@ async def update_exercise(
     - If updated, must still meet validation rules
     - Total >= 1.0, at least one PRIMARY muscle
     
-    **Image Updates (TODO):**
-    - Upload new image to replace existing
-    - Old image deleted from Cloud Storage
-    - Returns new image URL
-    
     **Cache Invalidation:**
     - Updates invalidate cached exercise (if Redis enabled)
     - Global exercises also invalidate list cache
@@ -556,13 +539,6 @@ async def update_exercise(
     **Rate Limiting:**
     - 20 requests per minute per user
     """
-    # TODO: Handle image upload
-    if image:
-        logger.info(f"Image update received: {image.filename}, size={image.size}")
-        # Validate and upload new image
-        # Delete old image from storage
-        # Update image_url in exercise_data
-    
     result = await exercise_service.update_exercise(
         exercise_id=exercise_id,
         exercise_data=exercise_data,
@@ -730,3 +706,4 @@ async def get_exercise_stats(
         "by_equipment": {},  # TODO: Aggregate by equipment
         "by_muscle": {},  # TODO: Aggregate by muscle
     }
+

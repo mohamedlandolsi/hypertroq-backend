@@ -196,8 +196,8 @@ class SessionCreate(BaseModel):
         description="Order of this session in program"
     )
     exercises: list[WorkoutExerciseInput] = Field(
-        min_length=1,
-        description="List of exercises in session"
+        default_factory=list,
+        description="List of exercises in session (can be empty, exercises can be added later)"
     )
     
     @field_validator("name")
@@ -212,9 +212,10 @@ class SessionCreate(BaseModel):
     @field_validator("exercises")
     @classmethod
     def validate_exercises(cls, v: list[WorkoutExerciseInput]) -> list[WorkoutExerciseInput]:
-        """Validate exercise ordering."""
+        """Validate exercise ordering if exercises are provided."""
+        # Allow empty exercises - sessions can be created first, exercises added later
         if not v:
-            raise ValueError("Session must have at least one exercise")
+            return v
         
         orders = [ex.order_in_session for ex in v]
         if len(orders) != len(set(orders)):
@@ -323,8 +324,9 @@ class ProgramCreate(BaseModel):
     structure_type: StructureType = Field(
         description="Weekly or cyclic structure"
     )
-    structure_config: WeeklyStructureInput | CyclicStructureInput = Field(
-        description="Structure configuration (type depends on structure_type)"
+    structure_config: WeeklyStructureInput | CyclicStructureInput | None = Field(
+        default=None,
+        description="Structure configuration (type depends on structure_type). If not provided, defaults will be used."
     )
     duration_weeks: int | None = Field(
         default=None,
@@ -333,8 +335,8 @@ class ProgramCreate(BaseModel):
         description="Recommended program duration in weeks"
     )
     sessions: list[SessionCreate] = Field(
-        min_length=1,
-        description="List of workout sessions"
+        default_factory=list,
+        description="List of workout sessions (can be empty, sessions can be added later)"
     )
     
     @field_validator("name")
@@ -354,21 +356,38 @@ class ProgramCreate(BaseModel):
     
     @model_validator(mode="after")
     def validate_structure_match(self) -> "ProgramCreate":
-        """Validate structure config matches structure type."""
-        if self.structure_type == StructureType.WEEKLY:
-            if not isinstance(self.structure_config, WeeklyStructureInput):
-                raise ValueError("structure_config must be WeeklyStructureInput for WEEKLY type")
-        elif self.structure_type == StructureType.CYCLIC:
-            if not isinstance(self.structure_config, CyclicStructureInput):
-                raise ValueError("structure_config must be CyclicStructureInput for CYCLIC type")
+        """Validate structure config matches structure type or set defaults."""
+        # If no structure_config provided, set sensible defaults
+        if self.structure_config is None:
+            if self.structure_type == StructureType.WEEKLY:
+                # Default to 4 days: Mon, Tue, Thu, Fri
+                self.structure_config = WeeklyStructureInput(
+                    days_per_week=4,
+                    selected_days=["MON", "TUE", "THU", "FRI"]
+                )
+            else:  # CYCLIC
+                # Default to 3 on, 1 off
+                self.structure_config = CyclicStructureInput(
+                    days_on=3,
+                    days_off=1
+                )
+        else:
+            # Validate provided config matches type
+            if self.structure_type == StructureType.WEEKLY:
+                if not isinstance(self.structure_config, WeeklyStructureInput):
+                    raise ValueError("structure_config must be WeeklyStructureInput for WEEKLY type")
+            elif self.structure_type == StructureType.CYCLIC:
+                if not isinstance(self.structure_config, CyclicStructureInput):
+                    raise ValueError("structure_config must be CyclicStructureInput for CYCLIC type")
         return self
     
     @field_validator("sessions")
     @classmethod
     def validate_sessions(cls, v: list[SessionCreate]) -> list[SessionCreate]:
         """Validate session constraints."""
+        # Allow empty sessions list - sessions can be added later
         if not v:
-            raise ValueError("Program must have at least one session")
+            return v  # Return empty list, sessions can be added later
         
         # Check unique day numbers
         day_numbers = [s.day_number for s in v]

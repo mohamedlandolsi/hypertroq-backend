@@ -76,7 +76,13 @@ class Exercise(Entity):
         Raises:
             ValueError: If muscle_contributions validation fails
         """
-        super().__init__(id, created_at, updated_at)
+        super().__init__(id)
+        
+        # Override timestamps if provided (for loading from database)
+        if created_at is not None:
+            self._created_at = created_at
+        if updated_at is not None:
+            self._updated_at = updated_at
         
         self._name = name.strip()
         self._equipment = equipment
